@@ -18,6 +18,7 @@ int k;
 int l;
 int w;
 
+//helper function to print the chess board
 void print_chess_board(int chess_board[])
 {	
 	int i;
@@ -28,6 +29,8 @@ void print_chess_board(int chess_board[])
 	}
 	printf("\n");
 }
+
+//Get number of queens on board
 int get_queen_count(int chess_board[])
 {
 	int queen_count = 0;
@@ -40,6 +43,7 @@ int get_queen_count(int chess_board[])
 
 	return queen_count;
 }
+
 //Add array of position to chess board
 void add_to_base_case(int data[], int r, int **base_cases)
 {
@@ -75,6 +79,7 @@ void combinationUtil(int arr[], int data[], int start, int end, int index, int r
     }
 }
 
+//Generate base case from k and n, we are sure that k+1 queen on board will not have any queen have more than k attacks
 void generate_base_case(int count, int **base_cases)
 {
 	/*
@@ -113,6 +118,8 @@ int min(int a, int b)
 	else
 		return a;
 }
+
+//To calculate queen i's attack count
 int get_attack_count(int i, int n, int chess_board[])
 {
 	int attack_count = 0;
@@ -282,6 +289,7 @@ int get_attack_count(int i, int n, int chess_board[])
     return attack_count;
 }
 
+//Calculate the attacks for every queen, check if they have no more than k attacks
 int is_safe_attack(int old_chess_board[], int new_queen_position)
 {
 	int * chess_board = malloc(sizeof(int) * board_size);;
@@ -304,6 +312,7 @@ int is_safe_attack(int old_chess_board[], int new_queen_position)
 	return 1;
 }
 
+//Validate if every queen on board has exact k attacks
 int is_valid_solution(int chess_board[])
 {
 	int i;
@@ -334,6 +343,7 @@ int * add_queen(int chess_board[], int i)
 	return new_chess_board;
 }
 
+//Check if the two boards have the same queen position
 int compare_chess_board(int board1[], int board2[])
 {
 	int i;
@@ -345,6 +355,7 @@ int compare_chess_board(int board1[], int board2[])
 	return 1;
 }
 
+//Helper function for cleaning up memory
 void free_all(int ** base_cases, int case_count)
 {
 	int i;
@@ -358,6 +369,7 @@ void free_all(int ** base_cases, int case_count)
 		free(base_cases[i]);
 	}
 }
+
 //if the chess board (which is a valid solutiin) has more than current maximum queen count, refresh solution
 //if the chess board is the same as current queen count, add to solution
 //else discard
@@ -399,7 +411,7 @@ void add_to_solution(int * chess_board)
 }
 
 /*
-	solve the cases
+	solve the cases, the main part of the algorithm
 */
 void solve(int chess_board[], int current_position) 
 {
@@ -428,7 +440,7 @@ void solve(int chess_board[], int current_position)
 }
 
 
-
+//Helper function for printint the solution
 void print_solution(int board_size)
 {
 	printf("%d:\n", max_queen_count);
@@ -518,6 +530,7 @@ int main(int argc, char **argv)
 		generate_base_case(case_count, base_cases);
 	}
 
+	//Prepare for scattering the job to processes
 	int *base_cases_index = (int *)malloc(sizeof(int) * case_count);
 	int *sub_base_cases_index = (int *)malloc(sizeof(int) * case_count);
 
@@ -526,6 +539,8 @@ int main(int argc, char **argv)
 
 	recvcount = sendcounts[world_rank];
 	MPI_Scatterv(base_cases_index, sendcounts, displs, MPI_INT, sub_base_cases_index, recvcount, MPI_INT, 0, MPI_COMM_WORLD);
+	
+	//Processes solve the probelm based on different base cases in parallel
 	for(i =0;i<recvcount;i++)
 	{	
 		if(sub_base_cases_index[i]<case_count)
@@ -535,6 +550,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	//Print the solution
 	if (world_rank == 0) {
 		printf("%d,%d:", n, k);
 		print_solution(board_size);
