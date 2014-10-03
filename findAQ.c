@@ -511,15 +511,15 @@ int main(int argc, char **argv)
 	}
 
 
-	int k = 0;
+	int offset = 0;
   	for (i=0; i<world_size; i++)
     {
     	if (i<elements_per_proc_extra) 
     		sendcounts[i] = elements_per_proc_min+1;
     	else 
     		sendcounts[i] = elements_per_proc_min;
-    	displs[i] = k;
-    	k = k+sendcounts[i];
+    	displs[i] = offset;
+    	offset = offset+sendcounts[i];
     }
 
 	/*
