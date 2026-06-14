@@ -1,12 +1,13 @@
 #!/bin/bash
 gcc -o find_aq_seq find_aq_seq.c -lm
 declare -A test_cases
-test_cases["3 1 1 0"]="2"
-test_cases["4 0 1 0"]="4"
-test_cases["4 1 0 1"]="4"
+test_cases["3 1 0 0"]="2"
+test_cases["4 0 0 0"]="4"
+test_cases["4 3 0 0"]="8"
+
 results=0
 failed=0
-for params in "3 1 1 0" "4 0 1 0" "4 1 0 1"; do
+for params in "3 1 0 0" "4 0 0 0" "4 3 0 0"; do
     expected=${test_cases[$params]}
     echo "Running test with params: $params"
     output=$(./find_aq_seq $params | head -n 1)
