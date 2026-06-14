@@ -5,7 +5,6 @@
 
 #define MAX_SOLUTION_SIZE 1024
 
-
 int base_case_index = 0;
 int max_queen_count = 0;
 int ** solution;
@@ -398,8 +397,6 @@ void solve(int chess_board[], int current_position)
 
 			add_to_solution(chess_board);
 		}
-		else
-			return;
 	}
 }
 
