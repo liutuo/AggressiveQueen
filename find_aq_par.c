@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#define MAX_SOLUTION_SIZE 1024
+#define MAX_SOLUTION_SIZE 2048
 
 int local_max_queen_count = 0;
 int **local_solutions;
@@ -17,9 +17,13 @@ int l;
 int w;
 
 void print_chess_board(int chess_board[]) {
+    int first = 1;
     for (int i = 0; i < board_size; i++) {
-        if (chess_board[i])
-            printf("%d, ", i);
+        if (chess_board[i]) {
+            if (!first) printf(",");
+            printf("%d", i + 1);
+            first = 0;
+        }
     }
     printf("\n");
 }
@@ -27,8 +31,7 @@ void print_chess_board(int chess_board[]) {
 int get_queen_count(int chess_board[]) {
     int queen_count = 0;
     for (int i = 0; i < board_size; i++) {
-        if (chess_board[i])
-            queen_count++;
+        if (chess_board[i]) queen_count++;
     }
     return queen_count;
 }
@@ -57,90 +60,39 @@ void generate_base_case(int count, int **base_cases) {
         memset(base_cases[i], 0, sizeof(int) * board_size);
     }
     int *arr = malloc(sizeof(int) * board_size);
-    for (int i = 0; i < board_size; i++) {
-        arr[i] = i;
-    }
+    for (int i = 0; i < board_size; i++) arr[i] = i;
     int *data = malloc(sizeof(int) * (k + 1));
     combinationUtil(arr, data, 0, board_size - 1, 0, k + 1, base_cases);
-    free(arr);
-    free(data);
+    free(arr); free(data);
 }
 
 int is_position_empty(int chess_board[], int i) {
     return !chess_board[i];
 }
 
-int min(int a, int b) {
-    return (a > b) ? b : a;
-}
-
 int get_attack_count(int i, int n, int chess_board[]) {
     int attack_count = 0;
-    int curr = i;
-    int curr_col = i % n;
-    int curr_row = i / n;
-    int j;
+    int r = i / n;
+    int c = i % n;
+    int dr[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+    int dc[] = {-1, 0, 1, -1, 1, -1, 0, 1};
 
-    for (j = 1; j <= min(curr_col, curr_row); j++) {
-        if (!is_position_empty(chess_board, curr - j * (n + 1))) {
-            attack_count++; break;
-        }
-    }
-    for (j = 1; j <= min(n - curr_col - 1, curr_row); j++) {
-        if (!is_position_empty(chess_board, curr - j * (n - 1))) {
-            attack_count++; break;
-        }
-    }
-    for (j = 1; j <= min(curr_col, n - curr_row - 1); j++) {
-        if (!is_position_empty(chess_board, curr + j * (n - 1))) {
-            attack_count++; break;
-        }
-    }
-    for (j = 1; j <= min(n - curr_col - 1, n - curr_row - 1); j++) {
-        if (!is_position_empty(chess_board, curr + j * (n + 1))) {
-            attack_count++; break;
-        }
-    }
-
-    if (w == 0) {
-        for (j = 1; j <= curr_row; j++)
-            if (!is_position_empty(chess_board, curr - n * j)) { attack_count++; break; }
-        for (j = 1; j <= n - curr_row - 1; j++)
-            if (!is_position_empty(chess_board, curr + n * j)) { attack_count++; break; }
-        for (j = 1; j <= curr_col; j++)
-            if (!is_position_empty(chess_board, curr - j)) { attack_count++; break; }
-        for (j = 1; j <= n - curr_col - 1; j++)
-            if (!is_position_empty(chess_board, curr + j)) { attack_count++; break; }
-    } else {
-        int stop_position = -1;
-        for (j = 1; j < n; j++) {
-            int check_pos = curr - n * j;
-            if (check_pos < 0) check_pos += board_size;
-            if (!is_position_empty(chess_board, check_pos)) {
-                attack_count++; stop_position = check_pos; break;
+    for (int d = 0; d < 8; d++) {
+        for (int step = 1; step < n; step++) {
+            int nr, nc;
+            if (w == 0) {
+                nr = r + dr[d] * step;
+                nc = c + dc[d] * step;
+                if (nr < 0 || nr >= n || nc < 0 || nc >= n) break;
+            } else {
+                nr = (r + dr[d] * step) % n;
+                if (nr < 0) nr += n;
+                nc = (c + dc[d] * step) % n;
+                if (nc < 0) nc += n;
             }
-        }
-        for (j = 1; j < n; j++) {
-            int check_pos = curr + n * j;
-            if (check_pos >= board_size) check_pos -= board_size;
-            if (check_pos == stop_position) break;
-            if (!is_position_empty(chess_board, check_pos)) {
-                attack_count++; stop_position = check_pos; break;
-            }
-        }
-        for (j = 1; j < n; j++) {
-            int check_pos = curr - j;
-            if (check_pos < curr_row * n) check_pos += n;
-            if (!is_position_empty(chess_board, check_pos)) {
-                attack_count++; stop_position = check_pos; break;
-            }
-        }
-        for (j = 1; j < n; j++) {
-            int check_pos = curr + j;
-            if (check_pos >= (curr_row + 1) * n) check_pos -= n;
-            if (check_pos == stop_position) break;
-            if (!is_position_empty(chess_board, check_pos)) {
-                attack_count++; stop_position = check_pos; break;
+            if (!is_position_empty(chess_board, nr * n + nc)) {
+                attack_count++;
+                break;
             }
         }
     }
@@ -232,9 +184,7 @@ int main(int argc, char **argv) {
     int case_count = nCr(board_size, k + 1);
 
     local_solutions = malloc(sizeof(int *) * MAX_SOLUTION_SIZE);
-    for (int i = 0; i < MAX_SOLUTION_SIZE; i++) {
-        local_solutions[i] = malloc(sizeof(int) * board_size);
-    }
+    for (int i = 0; i < MAX_SOLUTION_SIZE; i++) local_solutions[i] = malloc(sizeof(int) * board_size);
 
     int rem = case_count % world_size;
     int *sendcounts = malloc(sizeof(int) * world_size);
@@ -242,8 +192,7 @@ int main(int argc, char **argv) {
     int sum = 0;
     for (int i = 0; i < world_size; i++) {
         sendcounts[i] = (case_count / world_size) + (i < rem ? 1 : 0);
-        displs[i] = sum;
-        sum += sendcounts[i];
+        displs[i] = sum; sum += sendcounts[i];
     }
 
     int local_case_count = sendcounts[world_rank];
@@ -299,8 +248,9 @@ int main(int argc, char **argv) {
     MPI_Gatherv(flat_local_sol, local_solution_count * board_size, MPI_INT, flat_all_sol, rc_sol, ds_sol, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
-        printf("%d,%d:%d:\n", n, k, global_max);
-        if (l && total_sol > 0) {
+        if (l == 0) {
+            printf("%d,%d:%d:\n", n, k, global_max);
+        } else if (total_sol > 0) {
             int unique_count = 0;
             int *unique_sol = malloc(sizeof(int) * total_sol * board_size);
             for (int i = 0; i < total_sol; i++) {
@@ -312,7 +262,10 @@ int main(int argc, char **argv) {
                 }
                 if (!dup) memcpy(&unique_sol[unique_count++ * board_size], &flat_all_sol[i * board_size], sizeof(int) * board_size);
             }
-            for (int i = 0; i < unique_count; i++) print_chess_board(&unique_sol[i * board_size]);
+            for (int i = 0; i < unique_count; i++) {
+                printf("%d,%d:%d:", n, k, global_max);
+                print_chess_board(&unique_sol[i * board_size]);
+            }
             free(unique_sol);
         }
         free(all_counts); free(rc_sol); free(ds_sol); free(flat_all_sol);
